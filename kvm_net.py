@@ -28,14 +28,24 @@ def read_net(data=None):
         M_out.plugin = "net_kvm"
         M_out.type_instance = "net_out"
 
-        for line in open("/proc/net/dev", "r"):
-            if nics[0] in line:
-                s = line.strip().split()[1:]
-                M_in.values = [s[0]]
-                M_out.values = [s[8]]
+        # Open the file using a context manager to ensure safe file handling
+        with open("/proc/net/dev", "r") as f:
+            for line in f:
+                if nics[0] in line:
+                    # Split and clean the line to extract the needed values
+                    s = line.strip().split()[1:]  # Skip the interface name and take the rest
+
+                    # Assign the parsed values to M_in and M_out
+                    M_in.values = [int(s[0])]   # Receive bytes
+                    M_out.values = [int(s[8])]  # Transmit bytes
+                    break  # Break after processing the relevant line
+
+        # Dispatch the values to collectd
         M_in.dispatch()
         M_out.dispatch()
 
+
+# Register the configuration, initialization, and read callbacks with collectd
 collectd.register_config(config_net)
 collectd.register_init(init_net)
 collectd.register_read(read_net)
