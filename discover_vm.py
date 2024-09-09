@@ -18,7 +18,10 @@ def discover():
     try:
         for vm in os.listdir(path):
             vm_path = os.path.join(path, vm)
-            results[open(vm_path, "r").readline().strip()] = vm
+            # Using a context manager to open the file
+            with open(vm_path, "r") as f:
+                pid = f.readline().strip()
+                results[pid] = vm
     except OSError:
         pass
 
@@ -37,8 +40,10 @@ def discover_nic(hostname):
     try:
         host_path = os.path.join(path, hostname)
         for F in os.listdir(host_path):
-            nic = open(os.path.join(host_path, F), "r").read()
-            results.append(nic)
+            # Using a context manager to open the file
+            with open(os.path.join(host_path, F), "r") as f:
+                nic = f.read().strip()  # Strip to remove unnecessary newlines
+                results.append(nic)
     except OSError:
         pass
 
@@ -46,4 +51,5 @@ def discover_nic(hostname):
 
 
 if __name__ == "__main__":
-    print discover()
+    # Updated print for Python 3
+    print(discover())
