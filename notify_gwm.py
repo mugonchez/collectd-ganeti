@@ -1,6 +1,6 @@
 # coding: utf-8
-from urllib import urlencode
-import urllib2
+from urllib.parse import urlencode
+from urllib.request import urlopen
 import collectd
 
 GWM_HOST = None
@@ -30,15 +30,23 @@ def config_notify_gwm(data=None):
 def notify_gwm(notification):
     N = notification
     if GWM_HOST:
-        data = urlencode(dict(host=N.host, plugin=N.plugin,
-            plugin_instance=N.plugin_instance, type=N.type,
-            type_instance=N.type_instance, time=N.time, message=N.message,
-            severity=N.severity))
+        # Encode the data and ensure it's passed as bytes
+        data = urlencode(dict(
+            host=N.host,
+            plugin=N.plugin,
+            plugin_instance=N.plugin_instance,
+            type=N.type,
+            type_instance=N.type_instance,
+            time=N.time,
+            message=N.message,
+            severity=N.severity
+        )).encode('utf-8')
 
         try:
-            urllib2.urlopen("%s/metrics/alert" % GWM_HOST, data, 10)
-        except urllib2.URLError as e:
-            warning("Couldn't post notification: %s" % str(e))
+            # Post the data to the GWM_HOST
+            urlopen(f"{GWM_HOST}/metrics/alert", data, timeout=10)
+        except Exception as e:
+            warning(f"Couldn't post notification: {str(e)}")
 
 
 collectd.register_config(config_notify_gwm)
