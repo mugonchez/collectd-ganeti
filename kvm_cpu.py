@@ -19,9 +19,11 @@ def read_cpu(data=None):
         M.host = "kvm_" + host
         M.plugin = "cpu_kvm"
         M.type_instance = "cpu_usage"
-        # import os
-        # os.sysconf("SC_CLK_TCK")
-        (user, system) = open("/proc/%s/stat" % pid, 'r').readline().split(' ')[13:15]
+        # Safely open the /proc/[pid]/stat file using a context manager
+        with open(f"/proc/{pid}/stat", 'r') as f:
+            fields = f.readline().split(' ')
+            user = fields[13]
+            system = fields[14]
         M.values = [int(user) + int(system)]
         M.dispatch()
 
@@ -42,11 +44,16 @@ def read_cpu_wait(data=None):
         M.host = "kvm_" + host
         M.plugin = "cpu_kvm"
         M.type_instance = "cpu_wait"
-        (user, system) = open("/proc/%s/stat" % pid, 'r').readline().split(' ')[15:17]
+        # Safely open the /proc/[pid]/stat file using a context manager
+        with open(f"/proc/{pid}/stat", 'r') as f:
+            fields = f.readline().split(' ')
+            user = fields[15]
+            system = fields[16]
         M.values = [int(user) + int(system)]
         M.dispatch()
 
 
+# Register the configurations and reading callbacks for collectd
 collectd.register_config(config_cpu)
 collectd.register_init(init_cpu)
 collectd.register_read(read_cpu)
