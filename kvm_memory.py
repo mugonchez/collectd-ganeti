@@ -1,16 +1,11 @@
 # coding: utf-8
 import collectd
 import os
-import os.path
+import hashlib
 from discover_vm import discover
 
-try:
-    import hashlib
-    md5_new = hashlib.md5
-except ImportError:
-    import md5
-    md5_new = md5.new
-
+# Define md5_new using hashlib (works for both Python 2 and 3)
+md5_new = hashlib.md5
 
 def config_memory(data=None):
     # TODO: make configuration option to choose between quick (rough) and slow
@@ -24,8 +19,8 @@ PAGESIZE = 0
 def init_memory(data=None):
     global PAGESIZE
     collectd.debug("Initialization: " + repr(data))
-    #PAGESIZE = os.sysconf("SC_PAGE_SIZE") / 1024.  # KiB?
-    PAGESIZE = os.sysconf("SC_PAGE_SIZE")  # bytes?
+    # Set PAGESIZE in bytes
+    PAGESIZE = os.sysconf("SC_PAGE_SIZE")
 
 
 def read_memory(data=None):
@@ -37,47 +32,44 @@ def read_memory(data=None):
         M.plugin = "memory_kvm"
         M.type_instance = "memory_usage"
 
-        if os.path.exists("/proc/%s/smaps" % pid):
-            # slow but probably exact estimate
-
+        if os.path.exists(f"/proc/{pid}/smaps"):
+            # Slow but more accurate estimate
             digester = md5_new()
             shared, private, pss = 0, 0, 0
 
-            F = open("/proc/%s/smaps" % pid, "rb")
-            for line in F.readlines():
-                digester.update(line)
-                line = line.decode('ascii')
+            # Open the smaps file in binary mode, and handle byte decoding
+            with open(f"/proc/{pid}/smaps", "rb") as F:
+                for line in F.readlines():
+                    digester.update(line)
+                    line = line.decode('ascii')  # Decode the line from bytes to string
 
-                if line.startswith("Shared"):
-                    shared += int(line.split()[1])
-                elif line.startswith("Private"):
-                    private += int(line.split()[1])
-                elif line.startswith("Pss"):
-                    pss += 0.5 + float(line.split()[1])
-
-            F.close()
+                    if line.startswith("Shared"):
+                        shared += int(line.split()[1])
+                    elif line.startswith("Private"):
+                        private += int(line.split()[1])
+                    elif line.startswith("Pss"):
+                        pss += 0.5 + float(line.split()[1])
 
             if pss > 0:
                 shared = pss - private
 
-            M.values = [1024 * int(private + shared)]  # in bytes
+            # Memory usage in bytes
+            M.values = [1024 * int(private + shared)]
 
         else:
-            # rough, but quick estimate
-            # I'd use `with` statement, but not sure if it's present in Python 2.6
-            statm = open("/proc/%s/statm" % pid, "rt")
-            S = statm.readline().split()
-            statm.close()
-            statm = S
+            # Rough but quick estimate
+            with open(f"/proc/{pid}/statm", "rt") as statm:
+                S = statm.readline().split()
 
-            shared = int(statm[2]) * PAGESIZE
-            Rss = int(statm[1]) * PAGESIZE
+            shared = int(S[2]) * PAGESIZE
+            Rss = int(S[1]) * PAGESIZE
             private = Rss - shared
             M.values = [int(private) + int(shared)]
 
         M.dispatch()
 
 
+# Register the configuration, initialization, and read callbacks with collectd
 collectd.register_config(config_memory)
 collectd.register_init(init_memory)
 collectd.register_read(read_memory)
