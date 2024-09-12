@@ -57,6 +57,3 @@ def read_cpu_wait(data=None):
 collectd.register_config(config_cpu)
 collectd.register_init(init_cpu)
 collectd.register_read(read_cpu)
-collectd.register_config(config_cpu_wait)
-collectd.register_init(init_cpu_wait)
-collectd.register_read(read_cpu_wait)
