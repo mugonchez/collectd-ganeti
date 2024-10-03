@@ -2,6 +2,9 @@
 import collectd
 from discover_vm import discover, discover_nic
 
+def bytes_to_mb(bytes_value):
+    return bytes_value / (2**20)
+
 
 def config_net(data=None):
     collectd.debug("Configuration: " + repr(data))
@@ -36,14 +39,13 @@ def read_net(data=None):
                     s = line.strip().split()[1:]  # Skip the interface name and take the rest
 
                     # Assign the parsed values to M_in and M_out
-                    M_in.values = [int(s[0])]   # Receive bytes
-                    M_out.values = [int(s[8])]  # Transmit bytes
+                    M_in.values = [round(bytes_to_mb(int(s[0])),4)]   # Receive bytes
+                    M_out.values = [round(bytes_to_mb(int(s[8])),4)]  # Transmit bytes
                     break  # Break after processing the relevant line
 
         # Dispatch the values to collectd
         M_in.dispatch()
         M_out.dispatch()
-
 
 # Register the configuration, initialization, and read callbacks with collectd
 collectd.register_config(config_net)
