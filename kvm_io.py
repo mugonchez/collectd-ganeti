@@ -3,6 +3,9 @@ import collectd
 from discover_vm import discover
 
 
+def bytes_to_gb(bytes_value):
+    return bytes_value / (2**30)
+
 def config_io(data=None):
     collectd.debug("Configuration: " + repr(data))
 
@@ -29,9 +32,9 @@ def read_io(data=None):
         with open(f"/proc/{pid}/io", "r") as f:
             for line in f:
                 if "read_bytes" in line:
-                    M_read.values = [int(line.strip().split()[1])]
+                    M_read.values = [round(bytes_to_gb(int(line.strip().split()[1])),4)]
                 elif "write_bytes" in line:
-                    M_write.values = [int(line.strip().split()[1])]
+                    M_write.values = [round(bytes_to_gb(int(line.strip().split()[1])),4)]
 
         M_read.dispatch()
         M_write.dispatch()
