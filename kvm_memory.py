@@ -4,6 +4,9 @@ import os
 import hashlib
 from discover_vm import discover
 
+def bytes_to_gb(bytes_value):
+    return bytes_value / (2**30)
+
 # Define md5_new using hashlib (works for both Python 2 and 3)
 md5_new = hashlib.md5
 
@@ -54,7 +57,8 @@ def read_memory(data=None):
                 shared = pss - private
 
             # Memory usage in bytes
-            M.values = [1024 * int(private + shared)]
+            m_usage = 1024 * int(private + shared)
+            M.values = [round(bytes_to_gb(m_usage),4)]
 
         else:
             # Rough but quick estimate
@@ -64,7 +68,8 @@ def read_memory(data=None):
             shared = int(S[2]) * PAGESIZE
             Rss = int(S[1]) * PAGESIZE
             private = Rss - shared
-            M.values = [int(private) + int(shared)]
+            m_usage = int(private) + int(shared)
+            M.values = [round(bytes_to_gb(m_usage),4)]
 
         M.dispatch()
 
