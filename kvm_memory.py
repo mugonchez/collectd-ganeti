@@ -26,6 +26,7 @@ def init_memory(data=None):
     PAGESIZE = os.sysconf("SC_PAGE_SIZE")
 
 
+
 def read_memory(data=None):
     collectd.debug("Reading: " + repr(data))
     for pid, host in discover().items():
@@ -58,7 +59,7 @@ def read_memory(data=None):
 
             # Memory usage in bytes
             m_usage = 1024 * int(private + shared)
-            M.values = [round(bytes_to_gb(m_usage),4)]
+            M.values = [m_usage]
 
         else:
             # Rough but quick estimate
@@ -69,10 +70,9 @@ def read_memory(data=None):
             Rss = int(S[1]) * PAGESIZE
             private = Rss - shared
             m_usage = int(private) + int(shared)
-            M.values = [round(bytes_to_gb(m_usage),4)]
+            M.values = [m_usage]
 
         M.dispatch()
-
 
 # Register the configuration, initialization, and read callbacks with collectd
 collectd.register_config(config_memory)
