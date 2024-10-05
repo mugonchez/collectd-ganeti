@@ -32,9 +32,9 @@ def read_io(data=None):
         with open(f"/proc/{pid}/io", "r") as f:
             for line in f:
                 if "read_bytes" in line:
-                    M_read.values = [round(bytes_to_gb(int(line.strip().split()[1])),4)]
+                    M_read.values = [int(line.strip().split()[1])]
                 elif "write_bytes" in line:
-                    M_write.values = [round(bytes_to_gb(int(line.strip().split()[1])),4)]
+                    M_write.values = [int(line.strip().split()[1])]
 
         M_read.dispatch()
         M_write.dispatch()
