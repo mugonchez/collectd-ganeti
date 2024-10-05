@@ -13,7 +13,6 @@ def config_net(data=None):
 def init_net(data=None):
     collectd.debug("Initialization: " + repr(data))
 
-
 def read_net(data=None):
     collectd.debug("Reading: " + repr(data))
     for pid, host in discover().items():
@@ -39,8 +38,8 @@ def read_net(data=None):
                     s = line.strip().split()[1:]  # Skip the interface name and take the rest
 
                     # Assign the parsed values to M_in and M_out
-                    M_in.values = [round(bytes_to_mb(int(s[0])),4)]   # Receive bytes
-                    M_out.values = [round(bytes_to_mb(int(s[8])),4)]  # Transmit bytes
+                    M_in.values = [int(s[0])]   # Receive bytes
+                    M_out.values = [int(s[8])]  # Transmit bytes
                     break  # Break after processing the relevant line
 
         # Dispatch the values to collectd
